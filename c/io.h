@@ -30,7 +30,6 @@ double **get_data(const char *path, const int n_rows, const int n_columns, char 
         fgets(tmp, COUNT, freader);
         double *record = data_tok(tmp, tok, n_columns);
         result[j] = record;
-        //puts("");
     }
     fclose(freader);
     return result;

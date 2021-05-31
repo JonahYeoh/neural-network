@@ -3,7 +3,7 @@ Model
 '''
 # dependency
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import copy
 import math
 import sys
@@ -126,8 +126,8 @@ class ML_Agent(object):
         #print('total params', idx)
         assert idx == len(weights)
     
-    def fit(self, x, y, max_iter=100, goal=0.1, pack_goal=0.05, batch_size=5, validation=False, x_val=[], y_val=[], validation_batch_size=5):
-        best_fitness, wmatrix = self.optimizer.fit(self, x, y, max_iter, goal, pack_goal, batch_size, validation, x_val, y_val, validation_batch_size)
+    def fit(self, x, y, max_iter=100, goal=0.1, pack_goal=0.05, batch_size=5):
+        best_fitness, wmatrix = self.optimizer.fit(self, x, y, max_iter, goal, pack_goal, batch_size)
         self.__load_weight__(wmatrix)
         return best_fitness
     
@@ -177,7 +177,7 @@ class ML_Agent(object):
             accumulated_loss += self.__loss__(batch_pred, batch_y)
             pred_y.extend(batch_pred)
         if self.regularizer is not None:
-            accumulated_loss = (accumulated_loss * 1) + (self.regularizer(self.flat_weight) * 1)
+            accumulated_loss = (accumulated_loss * 1) + (self.regularizer(self.flat_weight) * 0.01)
         return accumulated_loss, self.__monitor__(pred_y, y.values.tolist())
     
     def _predict(self, x, batch_size=5):
@@ -198,7 +198,7 @@ class ML_Agent(object):
         return trim_tail(output)
     
     def __loss__(self, y_pred, y_true):
-        return self.loss_fn(y_pred, y_true) + close_gap_penalty(y_pred)#+ wondering_penalty(y_pred) + close_gap_penalty(y_pred)
+        return self.loss_fn(y_pred, y_true)
 
     def __monitor__(self, y_pred, y_true):
         metrics_board = dict()

@@ -36,7 +36,7 @@ def CCE(y_pred, y_true):
     log_tensor = tf.math.log(prob_tensor)
     loss = tf.reduce_sum(log_tensor).numpy()
 
-    total_CE = -1 * loss / len(y_pred)
+    total_CE = -1 * loss # / len(y_pred)
     return total_CE
 
 def ACC(y_pred, y_true):

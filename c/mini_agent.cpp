@@ -10,50 +10,52 @@ int main(void)
 {
     srand(time(NULL));
     printf("%s", "Hello World\n");
-    const char *file_path = ".//Final Project - thyroid//training_data2.txt"; //
+    const char *file_path = "..//dataset//training_data2.txt"; //
     char tok[2] = "\t";
     const int n_columns = 6;
     const int n_rows = 100;
     const int labels_idx = 5;
     const int n_classes = 3;
     const int batch_size = 100;
-    int units[] = {128};
-    NETWORK *network = init_network(n_columns - 1, n_classes, sizeof(units) / sizeof(units[0]) + 1, units, 0.05, batch_size);
+    int units[] = {64,32,16};
+    NETWORK *network = init_network(n_columns - 1, n_classes, sizeof(units) / sizeof(units[0]) + 1, units, 0.01, batch_size);
     printf("learning rate: %lf\n", network->learning_rate);
     print_network_weights(network);
     getchar();
     /*
     Train Data
     */
+    printf("getting data\n");
     double **data = get_data(file_path, n_rows, n_columns, tok);
+    printf("got the data\n");
     int k, l;
     double *labels = get_by_column(data, labels_idx, n_rows); // rmb to release!
     int **n_labels = one_hot_encoding(labels, n_rows, n_classes);
     double **n_features = drop_column(data, labels_idx, n_rows, n_columns);
-    double **scaled_features = min_max_scale(n_features, n_rows, n_columns);
+    //double **scaled_test_features = min_max_scale(test_features, 100, n_columns);
+    printf("what happened\n");
+    double *colmax = (double*)malloc(sizeof(double)*n_columns);
+    double *colmin = (double*)malloc(sizeof(double)*n_columns);
+    printf("building.. scaler\n");
+    MinMaxScaler(colmin, colmax, n_features, n_rows, n_columns);
+    printf("build scaler\n");
+    double **scaled_features = transform(colmin, colmax, n_features, n_rows, n_columns);
+    printf("transformed");
     puts("PRE-FIT");
-    /*
-    for (k=0; k<n_rows; k++)
-    {
-        for (l=0; l<n_columns-1; l++)
-            printf("%lf\t", scaled_features[k][l]);
-        puts("");
-    }
-    */
+    
     fit(network, scaled_features, n_labels, n_rows, 10000);
     puts("POST-FIT");
     /*
     Test Data
     */
     // utilize config file
-    //const char *test_file = ".//Final Project - thyroid//training_data1.txt"; //
-    const char *test_file = ".//Final Project - thyroid//testing_data2.txt"; //
+    const char *test_file = "..//dataset//testing_data2.txt"; //
     double **test_data = get_data(test_file, 100, n_columns, tok);
     double *test_labels = get_by_column(test_data, labels_idx, 100); // rmb to release!
     int **test_encoded_labels = one_hot_encoding(test_labels, 100, n_classes);
     double **test_features = drop_column(test_data, labels_idx, 100, n_columns);
-    double **scaled_test_features = min_max_scale(test_features, 100, n_columns);
-
+    double **scaled_test_features = transform(colmin, colmax, test_features, 100, n_columns);
+    free(colmax); free(colmin);
     int *seq = get_random_sequence(100);
     double **shuffled_features = map_seq2index(scaled_test_features, seq, 100, 5);
     int **shuffled_labels = map_seq2_index(test_encoded_labels, seq, 100, 5);

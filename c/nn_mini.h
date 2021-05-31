@@ -48,9 +48,10 @@ NEURON *init_neuron(const int i, const int in, const int out, const int batch_si
     neuron->idx = i;
     neuron->n_weights = in;
     neuron->weights = (double *)malloc(sizeof(double) * in);
-    double limit = sqrt(6 / (in + out));
+    double limit = sqrt(6.0 / (in + out));
     printf("#%lf", limit);
-    neuron->bias = (rand() % 860000) * 0.000001 * (rand() % 2 == 0 ? 1 : -1);
+    int bound = int(limit * 100000);
+    neuron->bias = (rand() % int(limit * 100000) * 0.00001) * (rand() % 2 == 0 ? 1 : -1);
     neuron->delta = (double *)malloc(sizeof(double) * batch_size);
     neuron->inputs = (double **)malloc(sizeof(double *) * batch_size);
     int j;
@@ -59,7 +60,7 @@ NEURON *init_neuron(const int i, const int in, const int out, const int batch_si
     neuron->activated_outputs = (double *)malloc(sizeof(double) * batch_size);
     for (j = 0; j < in; j++)
     {
-        neuron->weights[j] = (rand() % 860000) * 0.000001 * (rand() % 2 == 0 ? 1 : -1);
+        neuron->weights[j] = (rand() % int(limit * 100000) * 0.00001)* (rand() % 2 == 0 ? 1 : -1);
     }
 
     return neuron;
@@ -571,13 +572,6 @@ void fit(NETWORK *network, double **list_of_features, int **list_of_labels,
     }
 }
 
-double **batchwise_feed_forward(double **x, const int start_idx, const int end_idx, const int batch_size)
-{
-    double **output = (double **)malloc(sizeof(double *) * batch_size);
-
-    return output;
-}
-
 double **min_max_scale(double **data, const int n_rows, const int n_columns)
 {
     double **output = (double **)malloc(sizeof(double *) * n_rows);
@@ -613,5 +607,43 @@ double **min_max_scale(double **data, const int n_rows, const int n_columns)
     }
     free(column_min);
     free(column_max);
+    return output;
+}
+
+void MinMaxScaler(double *colmin, double *colmax, double **data, const int n_rows, const int n_columns)
+{
+    int j, k;
+    for (j = 0; j < n_columns; j++)
+    {
+        colmin[j] = __DBL_MAX__;
+        colmax[j] = __DBL_MIN__;
+    }
+    for (j = 0; j < n_rows; j++)
+    {
+        for (k = 0; k < n_columns; k++)
+        {
+            if (data[j][k] < colmin[k])
+            {
+                colmin[k] = data[j][k];
+            }
+            if (data[j][k] > colmax[k])
+            {
+                colmax[k] = data[j][k];
+            }
+        }
+    }
+
+}
+
+double **transform(double *colmin, double *colmax, double **data, const int n_rows, const int n_columns)
+{
+    double **output = (double**)malloc(sizeof(double*)*n_rows);
+    int j, k;
+    for (j = 0; j < n_rows; j++)
+    {
+        output[j] = (double *)malloc(sizeof(double) * n_columns);
+        for (k = 0; k < n_columns; k++)
+            output[j][k] = (data[j][k] - colmin[k]) / (colmax[k] - colmin[k]); // redundant steps
+    }
     return output;
 }

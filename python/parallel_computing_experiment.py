@@ -8,7 +8,7 @@ from utility import split_data, one_hot_encoding, split_data_2  # (dataframe, la
 from metrics import MSE
 from scalers import StandardScaler, MinMaxScaler
 from sklearn import datasets
-
+import os
 """
 for name, met in board.items():
     if type(met) == dict:
@@ -24,105 +24,88 @@ for pred, true in zip(y_pred, y_test):
 for idx, particle in enumerate(bees.swams):
     print(idx, particle.fitness)
 """
+def get_data(root, dir, columns=None):
+    with open(os.path.join(root, dir), 'r') as freader:
+        lines = freader.readlines()
+    records = list(map(lambda ele: list(map(lambda e: float(e), ele.split('\t'))), lines))
+    df = pd.DataFrame(records)
+    if columns is not None:
+        df.columns = columns
+    return df
+
 
 if __name__ == "__main__":
-    df = pd.read_csv("thyroid.csv")
-    # thyroid.csv
-    df = df.sample(frac=1)
-    # df.head(5)
-    cls_col = 'CLASS'
-    '''
-    iris = datasets.load_iris()
-    feature = iris['data']
-    label = iris[cls_col]
-    df = pd.DataFrame(feature, columns=iris['feature_names'])
-    df[cls_col] = label
-    print(type(df))
-    '''
-    #train, validation, test = split_data(df, "CLASS")
-    train, test = split_data_2(df, cls_col)
-    # print(train[:5], train.shape)
-    # print(validation[:5], validation.shape)
-    # print(test[:5], test.shape)
-
-    x_train, y_train = train.drop(cls_col, axis=1), train[cls_col]
-    #x_val, y_val = validation.drop("CLASS", axis=1), validation["CLASS"]
-    x_test, y_test = test.drop(cls_col, axis=1), test[cls_col]
-
-    n_class = len(np.unique(y_train))
-    '''
-    x_train, y_train = StandardScaler(x_train), one_hot_encoding(y_train, n_class)
-    #x_val, y_val = StandardScaler(x_val), one_hot_encoding(y_val, n_class)
-    x_test, y_test = StandardScaler(x_test), one_hot_encoding(y_test, n_class)
-    '''
-    x_train, y_train = MinMaxScaler(x_train), one_hot_encoding(y_train, n_class)
-    #x_val, y_val = MinMaxScaler(x_val), one_hot_encoding(y_val, n_class)
-    x_test, y_test = MinMaxScaler(x_test), one_hot_encoding(y_test, n_class)
+    print('ROOT: ', os.getcwd())
+    DATA = os.path.join(os.getcwd(), 'dataset')
+    GROUP = 1
+    N_COLUMN = 5
+    N_CLASS = 3
+    COLUMNS = ['f1', 'f2', 'f3', 'f4', 'f5', 'label']
+    EPOCHS = 100
+    BATCH_SIZE = 100
+    GOAL = 0.001
+    train_dir, test_dir = "..//dataset//training_data{}.txt".format(GROUP), "..//dataset//testing_data{}.txt".format(GROUP)
+    train, test = get_data(DATA, train_dir, COLUMNS), get_data(DATA, test_dir, COLUMNS)
+    # shuffle
+    train, test = train.sample(frac=1), test.sample(frac=1)
+    print('TRAIN DIM:', train.shape)
+    print('TEST DIM:', test.shape)
+    #
+    x_train, y_train = train.drop('label', axis=1), train['label']
+    x_test, y_test = test.drop('label', axis=1), test['label']
+    scaler = MinMaxScaler(['f1', 'f2', 'f3', 'f4', 'f5'])
+    scaler.fit(x_train)
+    x_train = scaler.transform(x_train)
+    x_test = scaler.transform(x_test)
+    y_train = one_hot_encoding(y_train, N_CLASS)
+    y_test = one_hot_encoding(y_test, N_CLASS)
 
     bees = BEES(
         dict(
             name="bees_agent",
             level="weak ai",
-            m=200,
+            m = 100,
             weight_constraint=[-3.0, 3.0],
-            c1=2.0,
-            c2=2.0,
-            c3=1,
+            c1 = 2.0,
+            c2 = 0.05,
             max_c1=2.0,
-            min_c1=0.8,
+            min_c1=0.5,
             max_c2=2.0,
-            min_c2=0.9,
-            max_c3=1.0,
-            min_c3=0.05,
-            velocity_constraint=[-0.5, 0.5],
-            w=1.6,
-            w_decay=0.9,
+            min_c2=0.5,
+            velocity_constraint=[-0.2, 0.2],
+            w=1.2,
+            decay = 0.95,
             goal=0.0001,
             initializer="glorot_uniform",
+            n_workers=3
         )
     )
-    ga = GA(
-        dict(
-            name="ga_agent2",
-            level="weak weak ai",
-            m=30,
-            x_rate=[0.1, 0.95],
-            m_rate=[0.05, 0.2],
-            weight_constraint=[-1.0, 1.0],
-            radioactive_rating=[0.1, 1.0],
-            grow_factor=[0.1, 1.0],
-        )
-    )
-    model = ML_Agent(n_feature=5, target_size=3)
+    model = ML_Agent(n_feature=N_COLUMN, target_size=N_CLASS)
 
     # add_layer(self, units, activation='relu', regularizer='l2', use_bias=True):
-    model.add_layer(8, "sigmoid", True, 'glorot_uniform')
-    model.add_layer(3, "sigmoid", True, 'glorot_uniform')
+    model.add_layer(8, 'sigmoid', True, 'uniform')
+    model.add_layer(N_CLASS, "sigmoid", True, 'uniform')
 
     model.compile_configuration(
         bees,
         loss="categorical_crossentropy",
         monitor=["accuracy", "precision", "recall", "essential_metrics"],
-        regularizer=None,
+        regularizer='l1',
     )  #
 
     # x, y, max_iter=100, goal=0.1, batch_size=5, validation=False, x_val=[], y_val=[], validation_batch_size=5
     minimum_loss = model.fit(
         x_train,
         y_train,
-        max_iter=500,
-        goal=0.001,
-        batch_size=len(y_train),
-        validation=False,
-        x_val=[],
-        y_val=[],
-        validation_batch_size=None
+        max_iter = EPOCHS,
+        goal = GOAL,
+        batch_size = len(x_train) #BATCH_SIZE
     )
     print("minimum loss:", minimum_loss)
-
+    
     loss, board = model._evaluate(x_test, y_test, len(y_test))
-    print("loss", loss)
-    print(board)
+    #print("loss", loss)
+    #print(board)
     y_pred = model._predict(x_test)
     y_test = np.array(y_test)
     loss = model.__loss__(y_pred, y_test)
@@ -131,6 +114,7 @@ if __name__ == "__main__":
     mse_loss = MSE(y_pred, y_test)
     print(mse_loss)
     print('trace')
+    
     for pred, true in zip(y_pred, y_test):
         print(pred, 'VS', true)
 
