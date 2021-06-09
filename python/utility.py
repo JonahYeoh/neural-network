@@ -5,7 +5,7 @@ Utility
 import numpy as np
 from sklearn.utils import shuffle
 import pandas as pd
-
+import os
 
 def trim_tail(arr):
     result = arr
@@ -111,6 +111,18 @@ def get_nparams(n_feature, units, bias):
         n_params += n_unit * prev + (n_unit if bias[lyr] else 0)
         prev = n_unit
     return n_params
+
+def get_data(root, dir, columns=None):
+    with open(os.path.join(root, dir), 'r') as freader:
+        lines = freader.readlines()
+    records = list(map(lambda ele: list(map(lambda e: float(e), ele.split('\t'))), lines))
+    df = pd.DataFrame(records)
+    if columns is not None:
+        df.columns = columns
+    for col in df.columns:
+        df[col] = df[col].astype('float32')
+    print(df.info())
+    return df
 
 
 if __name__ == "__main__":
