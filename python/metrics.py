@@ -32,11 +32,13 @@ def CCE(y_pred, y_true):
                 i_pred = i_pred if i_pred > 1e-7 else 1e-7
                 i_pred = i_pred if i_pred < 1 - 1e-7 else 1 - 1e-7
                 prob.append(i_pred)
+
+    prob = np.array(prob, dtype='float32')
     prob_tensor = tf.constant(prob)
     log_tensor = tf.math.log(prob_tensor)
     loss = tf.reduce_sum(log_tensor).numpy()
 
-    total_CE = -1 * loss # / len(y_pred)
+    total_CE = -1 * loss / len(y_pred)
     return total_CE
 
 def ACC(y_pred, y_true):
@@ -70,7 +72,6 @@ def essential_metrics(y_pred, y_true):
     for element in range(len(y_pred[0])):
         book[element] = dict(tp_hit=0, fp_hit=0, tn_hit=0, fn_hit=0)
     y_pred = extremizer(y_pred)
-    #print(y_pred)
     for idx in range(len(y_pred)):
         true_units = y_true[idx]
         pred_units = y_pred[idx]
