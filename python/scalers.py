@@ -8,21 +8,6 @@ from scipy import stats
 from functools import reduce
 import os
 
-def StandardScaler(dataframe):
-    scaled_dataframe = pd.DataFrame()
-    for col in dataframe.columns:
-        data_col = dataframe[col]
-        scaled_dataframe[col] = stats.zscore(data_col)
-    return scaled_dataframe
-'''
-def MinMaxScaler(dataframe):
-    scaled_dataframe = pd.DataFrame()
-    for col in dataframe.columns:
-        data_col = dataframe[col]
-        #scaled_dataframe[col] = data_col / np.max(data_col)
-        scaled_dataframe[col] = (data_col-np.min(data_col)) / (np.max(data_col)-np.min(data_col))
-    return scaled_dataframe
-'''
 class MinMaxScaler:
     def __init__(self, columns):
         self.columns = columns
@@ -45,9 +30,32 @@ class MinMaxScaler:
         if self._fitted == False:
             raise Exception('transform before scaler is fitted')
         tmp = pd.DataFrame()
-        m = data.shape[1]
         for i, c in enumerate(self.columns):
             tmp[c] = (data[c] - self.f_min[i]) / self.f_diff[i]
+        assert tmp.shape == data.shape
+        return tmp
+
+class StandardScaler:
+    def __init__(self, columns):
+        self.columns = columns
+        self._fitted = False
+    
+    def fit(self, df):
+        self.f_mean = list()
+        self.f_std = list()
+        for col in self.columns:
+            m = np.mean(df[col])
+            s = np.std(df[col])
+            self.f_mean.append(m)
+            self.f_std.append(s)
+        self._fitted = True
+
+    def transform(self, data):
+        if self._fitted == False:
+            raise Exception('transform before scaler is fitted')
+        tmp = pd.DataFrame()
+        for i, col in enumerate(self.columns):
+            tmp[col] = (data[col] - self.f_mean[i]) / self.f_std[i]
         assert tmp.shape == data.shape
         return tmp
 
