@@ -10,11 +10,11 @@ import tensorflow as tf
 '''
 Remarks: Need to ensure all y_pred and y_true are in the same dtype
 '''
-def MSE(y_pred, y_true):
+def MSE(y_pred, y_true, em = None): # em were included for the sake of consistency
     result = [l**2 for l in subtract(y_pred, y_true)]
     return np.sum(result) / len(y_pred)
 
-def CCE(y_pred, y_true):
+def CCE(y_pred, y_true, em = None): # em were included for the sake of consistency
     '''
     if type(y_true) == pd.DataFrame:
         ground_truth = y_true.values.tolist()
@@ -41,16 +41,15 @@ def CCE(y_pred, y_true):
     total_CE = -1 * loss / len(y_pred)
     return total_CE
 
-def ACC(y_pred, y_true):
+def ACC(y_pred, y_true, em = None):
     assert len(y_pred) == len(y_true)
-    hit = 0
-    for idx in range(len(y_pred)):
-        #print(np.argmax(batch_pred[idx]), 'vs', np.argmax(batch_y[idx]))
-        if np.argmax(y_pred[idx]) == np.argmax(y_true[idx]):
-            hit += 1
-    accuracy = hit / len(y_pred)
-    assert 0.0 <= accuracy <= 1.0, 'hit:{}, tot:{}'.format(hit, len(y_pred))
-    return accuracy
+    global_tp, global_fp, global_tn, global_fn = 0, 0, 0, 0
+    for met in em.values():
+        global_tp += met['tp_hit']
+        global_fp += met['fp_hit']
+        global_tn += met['tn_hit']
+        global_fn += met['fn_hit']
+    return (global_tp + global_tn) / (global_tp + global_tn + global_fp + global_fn)
 
 def extremizer(array):
     extreme_array = list()
@@ -88,25 +87,29 @@ def essential_metrics(y_pred, y_true):
                     book[cls]['fn_hit'] = book[cls]['fn_hit'] + 1
     return book
 
-def PRECISION(y_pred, y_true):
+def PRECISION(y_pred, y_true, em = None):
     assert len(y_pred) == len(y_true)
-    ref_book = essential_metrics(y_pred, y_true)
     global_tp = 0
     global_fp = 0
-    for met in ref_book.values():
+    for met in em.values():
         global_tp += met['tp_hit']
         global_fp += met['fp_hit']
     return global_tp / (global_tp + global_fp)
 
-def RECALL(y_pred, y_true):
+def RECALL(y_pred, y_true, em = None):
     assert len(y_pred) == len(y_true)
-    ref_book = essential_metrics(y_pred, y_true)
     global_tp = 0
     global_fn = 0
-    for met in ref_book.values():
+    for met in em.values():
         global_tp += met['tp_hit']
         global_fn += met['fn_hit']
     return global_tp / (global_tp + global_fn)
+
+def F1(y_pred, y_true, em = None):
+    assert len(y_pred) == len(y_true)
+    precision = PRECISION([], [], em)
+    recall = RECALL([], [], em)
+    return 2 * (precision * recall) / (precision + recall)
 
 def wondering_penalty(y_pred):
     hit = 0
