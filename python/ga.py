@@ -87,8 +87,9 @@ class GA(object):
                 wmatrix = self.population[m].wmatrix
                 obj.__load__(wmatrix)
                 metrics = obj.evaluate(x, y, training=True, verbose = 0)
-                self.population[m].fitness = metrics[loss] + \
-                    self.regularizer(wmatrix) if self.regularizer is not None else 0
+                self.population[m].fitness = metrics[loss] 
+                if self.regularizer:
+                    self.population[m].fitness += self.regularizer(wmatrix)
             best_fitness, best_wmatrix, _ = self.update_state(verbose)
             history.append(best_fitness)
             self.update_pool()

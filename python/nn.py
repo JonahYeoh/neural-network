@@ -54,6 +54,7 @@ class Network:
             fitness, wmatrix, history = self.optimizer.fit(self, X, Y, epochs, \
                 loss = self.loss_fn, verbose = verbose)
             self.__load__(wmatrix)
+            self.best_weight = copy.deepcopy(wmatrix)
         #print('finish training')
         return history
 
