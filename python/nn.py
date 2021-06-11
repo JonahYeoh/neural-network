@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-from metrics import ACC, CCE, MSE, PRECISION, RECALL, essential_metrics
+from metrics import ACC, CCE, MSE, PRECISION, RECALL, essential_metrics, F1
 
 metrics_fn_dict = dict()
 metrics_fn_dict['accuracy'] = ACC
@@ -9,7 +9,7 @@ metrics_fn_dict['mean_square_error'] = MSE
 metrics_fn_dict['precision'] = PRECISION
 metrics_fn_dict['recall'] = RECALL
 metrics_fn_dict['essential_metrics'] = essential_metrics
-
+metrics_fn_dict['f1'] = F1
 
 # n_layer * owns unit count
 class Network:
@@ -34,7 +34,7 @@ class Network:
         aim = True if loss_fn == 'accuracy' else False
         self.optimizer.__build__(self.get_nparams(), aim)
 
-    def fit(self, x, y, epochs=100):
+    def fit(self, x, y, epochs=100, verbose = 1):
         history = list()
         X, Y = x.values, y.values
         if self.optimizer == 'sgd':
@@ -45,39 +45,39 @@ class Network:
                 self.__backprop__(Y)
                 self.__update__()
                 #print('update')
-                score = self.evaluate(X, Y)
+                score = self.evaluate(X, Y, training=True, verbose = 0)
                 #print('Epoch {:03d}: {}'.format(itr, score))
                 #print('done', itr)
                 if itr % 50 == 0:
                     self.learning_rate *= 0.95
         else:
             fitness, wmatrix, history = self.optimizer.fit(self, X, Y, epochs, \
-                loss = self.loss_fn)
-            print('ending', wmatrix)
+                loss = self.loss_fn, verbose = verbose)
             self.__load__(wmatrix)
-        print('finish training')
+        #print('finish training')
         return history
 
     def predict(self, x):
         return self.__feedforward__(x)
 
-    def evaluate(self, x, y, training=True):
+    def evaluate(self, x, y, training=True, verbose = 1):
         if not training:
             x, y = x.values, y.values
         yhat = self.__feedforward__(x)
-        if not training:
+        if verbose == 1:
             for t, p in zip(y, yhat):
                 print(t, '<->', p)
-                pass
         return self.monitor(y, yhat)
     
     def loss(self, y, yhat):
         return 0
     
     def monitor(self, y, yhat):
+        essential_metrics = metrics_fn_dict['essential_metrics'](yhat, y)
         metric_board = dict()
         for key in self.metrics:
-            metric_board[key] = metrics_fn_dict[key](yhat, y)
+            metric_board[key] = metrics_fn_dict[key](yhat, y, essential_metrics)
+        metric_board['essential_metrics'] = essential_metrics
         return metric_board
 
     def __str__(self):

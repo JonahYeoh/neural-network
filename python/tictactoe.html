@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type = "text/JavaScript">
+        // board = [[0 0 0] [0 0 0] [0 0 0]] // 1, -1
+        function check(board){
+            for (i=0; i<3; i++){
+                ret = board[i].reduce(function(x, y){
+                    return x + y;
+                });
+                if (Math.abs(ret) == 3)
+                    return ret;
+            }
+            for (i=0; i<3; i++){
+                ret = 0;
+                for (j=0; j<3; j++){
+                    ret += board[j][i];
+                }
+                if (Math.abs(ret) == 3)
+                    return ret;
+            }
+            if (board[1][1] != 0){
+                ret = board[0][0] + board[1][1] + board[2][2];
+                if (Math.abs(ret) == 3)
+                    return ret;
+                ret = board[0][2] + board[1][1] + board[2][0];
+                if (Math.abs(ret) == 3)
+                    return ret;
+            }
+            return 0;
+        }
+
+        function free_step(board){
+            free_space = []
+            for (i=0; i<3; i++){
+                for (j=0; j<3; j++){
+                    if (board[i][j] == 0){
+                        free_space.push(i*3+j);
+                    }
+                }
+            }
+            console.log('free', free_space.length);
+            return free_space;
+        }
+
+        function minimax(board, depth, player){
+            //console.log('p', player, 'd', depth);
+            //console.table(board);
+            status = check(board);
+            //console.log('status', status);
+            if (Math.abs(status) == 3 || depth == 9){
+                //console.log('end game');
+                //console.log('cost', -100 * player);
+                return -100 * player * status * depth;
+            }
+            steps = free_step(board);
+            high = Number.MIN_VALUE;
+            low = Number.MAX_VALUE;
+            for (i=0; i<steps.length; i++){
+                pos = steps[i];
+                let y = pos % 3;
+                let x = (pos - y) / 3;
+                console.log('pos', x, y);
+                board[x][y] = player;
+                value = minimax(board, depth+1, player*-1);
+                board[x][y] = 0;
+                //console.log('clear', x, y);
+                if (player == 1){
+                    //console.log('max');
+                    if (value >= high)
+                        high = value;
+                }
+                else{
+                    //console.log('min');
+                    if (value <= low)
+                        low = value;
+                }
+                
+            }
+            //console.log('end of mini max');
+            if (player == 1)
+                return high;
+            return low;
+        }
+
+        function init(){
+            board = [];
+            for (i=0; i<3; i++){
+                row = [];
+                for (j=0; j<3; j++){
+                    row.push(0);
+                }
+                board.push(row);
+            }
+            return board;
+        }
+
+        function start(){
+           // alert('Game Start');
+            board = init();
+            console.log(board);
+            end = false;
+            depth = 0;
+            player = 1;
+            rpos = Math.floor(Math.random() * 9);
+            console.log(rpos);
+            let k, m;
+            m = rpos % 3;
+            k = (rpos - m) / 3;
+            console.log(k, m);
+            //k = 1;
+            //m = 1;
+            board[k][m] = -player;
+            while (depth != 9){
+                console.log('round', depth);
+                steps = free_step(board);
+                high = Number.MIN_VALUE;
+                low = Number.MAX_VALUE;
+                console.log('free', steps.length);
+                let s;
+                for (s=0; s<steps.length; s++){
+                    console.log('loop', s);
+                    pos = steps[s];
+                    let y = pos % 3;
+                    let x = (pos - y) / 3;
+                    console.log('$pos', x, y);
+                    board[x][y] = player;
+                    value = minimax(board, depth+1, player*-1);
+                    board[x][y] = 0;
+                    console.log('done the outer');
+                    if (player == 1){
+                        //console.log('compare', value, high);
+                        if (value >= high){
+                            console.log('updated', high);
+                            high = value;
+                            best_move = pos;
+                        }
+                    }
+                    else{
+                        console.log('compare', value, low);
+                        if (value <= low){
+                            console.log('updated', low);
+                            low = value;
+                            best_move = pos;
+                        }
+                    }
+                    console.log('end loop', s);
+                }
+                console.log('end of experiments', i);
+                y = best_move % 3;
+                x = (best_move - y) / 3;
+                board[x][y] = player;
+                console.table(board);
+                if (check(board) == player*3){
+                    console.log(player, 'won the game');
+                    break;
+                }
+                console.log('end of round', depth);
+                player *= -1;
+                depth += 1;
+            }
+            if (depth >= 9){
+                console.log('Draw');
+            }
+            console.log('end');
+       }
+
+    </script>
+</head>
+<body onload="start()">
+    html
+</body>
+</html>

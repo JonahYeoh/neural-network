@@ -15,12 +15,6 @@ def MSE(y_pred, y_true, em = None): # em were included for the sake of consisten
     return np.sum(result) / len(y_pred)
 
 def CCE(y_pred, y_true, em = None): # em were included for the sake of consistency
-    '''
-    if type(y_true) == pd.DataFrame:
-        ground_truth = y_true.values.tolist()
-    else:
-        ground_truth = y_true
-    '''
     total_CE = 0
     prob = []
     for idx in range(len(y_pred)):
@@ -109,7 +103,7 @@ def F1(y_pred, y_true, em = None):
     assert len(y_pred) == len(y_true)
     precision = PRECISION([], [], em)
     recall = RECALL([], [], em)
-    return 2 * (precision * recall) / (precision + recall)
+    return 2 * (precision * recall) / (precision + recall) if precision > 0 and recall > 0 else 0.0
 
 def wondering_penalty(y_pred):
     hit = 0

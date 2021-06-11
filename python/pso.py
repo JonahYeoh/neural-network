@@ -66,12 +66,14 @@ class PSO(object):
         self.M = config['m']
         self.weight_constraint = config['weight_constraint']
         self.velocity_constraint = config['velocity_constraint']
-        self.C1, self.C2 = config['c1'][1], config['c2'][0] # 
-        self.MAX_C1, self.MIN_C1 = config['c1'][1], config['c1'][0]
-        self.MAX_C2, self.MIN_C2 = config['c2'][1], config['c2'][0]
-        self.W = config['w'] # learning rate
+        self.c1 = config['c1'][1] if type(config['c1']) == list else config['c1']
+        self.c2 = config['c2'][0] if type(config['c2']) == list else config['c2']
+        self.C1, self.C2 = config['c1'], config['c2']
+        self.w = config['w'][1] if type(config['w']) == list else config['w']
+        self.W = config['w']
         self.W_Decay = config['w_decay']
         self.global_best_matrix = None
+        self.scale_hp = config['scale_hyperparameter']
         
     def __build__(self, seq_len, aim):
         self.seq_len = seq_len
@@ -79,26 +81,23 @@ class PSO(object):
         self.swams = [Particle(m, seq_len, aim, self.weight_constraint) for m in range(self.M)]
         self.global_best_fitness = sys.float_info.min if aim else sys.float_info.max
     
-    def fit(self, obj, x, y, max_iter, goal = 0, batch_size = 0, loss = 'categorical_crossentropy'):
-        min_improv = 0.0001
-        patience = 10
-        best_val = sys.float_info.max
-        arrgg = 0
+    def fit(self, obj, x, y, max_iter, goal = 0, batch_size = 0, loss = 'categorical_crossentropy', verbose = 1):
         history = list()
         for itr in range(max_iter):
             for m in range(len(self.swams)):
                 wmatrix = self.swams[m].wmatrix
                 obj.__load__(wmatrix)
-                metrics = obj.evaluate(x, y, len(x))
+                metrics = obj.evaluate(x, y, training=True, verbose = 0)
                 self.swams[m].fitness = metrics[loss]
-            best_fitness, best_wmatrix, _ = self.update_state()
+            best_fitness, best_wmatrix, _ = self.update_state(verbose)
             history.append(best_fitness)
             self.update_pool()
             self.update_learning_config(max_iter, itr)
-            print('Iteration {}/{}: \t{}'.format(itr, max_iter, best_fitness))
+            if verbose == 1:
+                print('Iteration {}/{}: \t{}'.format(itr, max_iter, best_fitness))
         return best_fitness, best_wmatrix, history     
 
-    def update_state(self):
+    def update_state(self, verbose = 1):
         best_particle = None
         if not self.aim:
             for particle in self.swams:
@@ -106,9 +105,11 @@ class PSO(object):
                     particle.best = {'fitness':particle.fitness, 'wmatrix': particle.wmatrix}
                 elif particle.fitness <= particle.best['fitness']:
                     particle.best = {'fitness':particle.fitness, 'wmatrix': particle.wmatrix}
-                    print('update local,', particle.fitness)
+                    if verbose == 1:
+                        print('update local,', particle.fitness)
                 if particle.best['fitness'] <= self.global_best_fitness:
-                    print('update global', particle.best['fitness'])
+                    if verbose == 1:
+                        print('update global', particle.best['fitness'])
                     self.global_best_fitness = particle.best['fitness']
                     best_particle = particle.idx
         else:
@@ -117,9 +118,11 @@ class PSO(object):
                     particle.best = {'fitness':particle.fitness, 'wmatrix': particle.wmatrix}
                 elif particle.fitness >= particle.best['fitness']:
                     particle.best = {'fitness':particle.fitness, 'wmatrix': particle.wmatrix}
-                    print('update local,', particle.fitness)
+                    if verbose == 1:
+                        print('update local,', particle.fitness)
                 if particle.best['fitness'] >= self.global_best_fitness:
-                    print('update global', particle.best['fitness'])
+                    if verbsoe == 1:
+                        print('update global', particle.best['fitness'])
                     self.global_best_fitness = particle.best['fitness']
                     best_particle = particle.idx
 
@@ -137,12 +140,12 @@ class PSO(object):
             for v,p,l,g in zip(particle.vmatrix, particle.wmatrix, particle.best['wmatrix'], self.global_best_matrix):
                 #print(v, p, l, g)
                 _velocity = (self.W * v) + \
-                (self.C1 * np.random.uniform(0,1,1) * (l-p)) + \
-                (self.C2 * np.random.uniform(0,1,1) * (g-p))
+                (self.c1 * np.random.uniform(0,1,1) * (l-p)) + \
+                (self.c2 * np.random.uniform(0,1,1) * (g-p))
                 velocity = self.clip(_velocity+v, self.velocity_constraint)
                 #print('velo', velocity)
                 new_velocity.append(velocity)
-                weight = self.clip(p+velocity + np.random.uniform(-0.1, 0.1, 1), self.weight_constraint)
+                weight = self.clip(p+velocity + np.random.uniform(-0.01, 0.01, 1), self.weight_constraint)
                 new_matrix.append(weight)
             particle.wmatrix = np.array(new_matrix, dtype='float32')
             particle.vmatrix = np.array(new_velocity, dtype='float32')
@@ -150,11 +153,10 @@ class PSO(object):
 
     def update_learning_config(self, max_iter, itr):
         #print('Update Learning Configuration')
-        #self.C1 = self.MAX_C1 + (self.MAX_C1 - self.MIN_C1) / max_iter * itr
-        self.C1 = self.MAX_C1 - (self.MAX_C1 * itr / max_iter) + self.MIN_C1
-        self.C2 = np.min([self.MIN_C2 + (self.MAX_C2 * itr / max_iter), self.MAX_C2])
-        self.W = self.W * self.W_Decay
-        pass
+        if self.scale_hp:
+            self.c1 = np.max([self.C1[1] - ((self.C1[1] - self.C1[0]) * itr / max_iter), self.C1[0]])
+            self.c2 = np.min([self.C2[0] + ((self.C2[1] - self.C2[0]) * itr / max_iter), self.C2[1]])
+            self.w = np.max([self.w * self.W_Decay, self.W[0]])
 
     def clip(self, x, bound):
         #print('clip', type(x), type(bound[0]))
@@ -164,6 +166,3 @@ class PSO(object):
     def get_agent_wmatrix(self, idx):
         return self.swams[idx].wmatrix
     
-    @property
-    def m(self):
-        return self.M

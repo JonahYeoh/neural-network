@@ -50,7 +50,7 @@ class DenseLayer:
         if self.activation is not None:
             by = self.activation(by)
         #print('by', by)
-        tmp = np.array(by, dtype='float32')
+        #tmp = np.array(by, dtype='float32')
         #print('layer:', self.idx, tmp.shape)
         self.inputs = copy.deepcopy(x)
         self.outputs = by
@@ -58,7 +58,7 @@ class DenseLayer:
         return by
 
     def __update__(self, learning_rate):
-        momentum = 0.005
+        momentum = 0.05
         #velocity = momentum * velocity - learning_rate * g
         for n in range(len(self.neurons)):
             for i in range(self.nin):
@@ -86,6 +86,7 @@ class DenseLayer:
         return 0
     
     def __str__(self):
+        print('Layer {}'.format(self.idx))
         for neuron in self.neurons:
             print(neuron)
         return '$'
