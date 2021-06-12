@@ -207,15 +207,15 @@ class GA(object):
         child = None
         if method =='single':
             p1 = int(self.seq_len * np.random.uniform(0,1,1))% self.seq_len
-            child = copy.deepcopy(seq1)
-            child[p1] = seq2[p1]
+            child = copy.deepcopy(seq1)[:p1]
+            child = np.append(child, copy.deepcopy(seq2)[p1:])
         elif method == 'two':
             cut_1, cut_2 = int(self.seq_len * np.random.uniform(0,1,1))% self.seq_len, int(self.seq_len * np.random.uniform(0,1,1)) % self.seq_len
             while cut_1 >= cut_2:
                 cut_1, cut_2 = int(self.seq_len * np.random.uniform(0,1,1))% self.seq_len, int(self.seq_len * np.random.uniform(0,1,1)) % self.seq_len
             child = copy.deepcopy(seq1[:cut_1])
-            child = np.append(child, copy.deepcopy(seq2[cut_1:cut_2]), 0)
-            child = np.append(child, copy.deepcopy(seq1[cut_2:]), 0)
+            child = np.append(child, copy.deepcopy(seq2[cut_1:cut_2]))
+            child = np.append(child, copy.deepcopy(seq1[cut_2:]))
             assert child.shape[0] == self.seq_len, '{}:{}'.format(child.shape[0], self.seq_len)
         else:
             # uniform

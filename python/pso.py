@@ -121,7 +121,7 @@ class PSO(object):
                     if verbose == 1:
                         print('update local,', particle.fitness)
                 if particle.best['fitness'] >= self.global_best_fitness:
-                    if verbsoe == 1:
+                    if verbose == 1:
                         print('update global', particle.best['fitness'])
                     self.global_best_fitness = particle.best['fitness']
                     best_particle = particle.idx
@@ -131,7 +131,7 @@ class PSO(object):
             self.global_best_matrix = copy.deepcopy(self.swams[best_particle].best['wmatrix'])
         return self.global_best_fitness, self.global_best_matrix, np.sum(swam_fitness) / len(swam_fitness)
 
-    def update_pool(self):
+    def update_pool(self, alpha = 0.01):
         #print('Update Pool')
         for particle in self.swams:
             #print('\n\nParticle:', particle.idx)
@@ -145,7 +145,7 @@ class PSO(object):
                 velocity = self.clip(_velocity+v, self.velocity_constraint)
                 #print('velo', velocity)
                 new_velocity.append(velocity)
-                weight = self.clip(p+velocity + np.random.uniform(-0.01, 0.01, 1), self.weight_constraint)
+                weight = self.clip(p+velocity + np.random.uniform(-alpha, alpha, 1), self.weight_constraint)
                 new_matrix.append(weight)
             particle.wmatrix = np.array(new_matrix, dtype='float32')
             particle.vmatrix = np.array(new_velocity, dtype='float32')
