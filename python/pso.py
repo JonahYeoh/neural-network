@@ -68,13 +68,16 @@ class PSO(object):
         self.velocity_constraint = config['velocity_constraint']
         self.c1 = config['c1'][1] if type(config['c1']) == list else config['c1']
         self.c2 = config['c2'][0] if type(config['c2']) == list else config['c2']
+        print('see one see two', self.c1, self.c2)
         self.C1, self.C2 = config['c1'], config['c2']
         self.w = config['w'][1] if type(config['w']) == list else config['w']
         self.W = config['w']
         self.W_Decay = config['w_decay']
         self.global_best_matrix = None
         self.scale_hp = config['scale_hyperparameter']
-        
+        self.regularizer = config['regularizer']
+        self.mask = config['mask']
+
     def __build__(self, seq_len, aim):
         self.seq_len = seq_len
         self.aim = aim
@@ -89,6 +92,8 @@ class PSO(object):
                 obj.__load__(wmatrix)
                 metrics = obj.evaluate(x, y, training=True, verbose = 0)
                 self.swams[m].fitness = metrics[loss]
+                if self.regularizer:
+                    self.swams[m].fitness += self.regularizer(wmatrix)
             best_fitness, best_wmatrix, _ = self.update_state(verbose)
             history.append(best_fitness)
             self.update_pool()
@@ -137,16 +142,33 @@ class PSO(object):
             #print('\n\nParticle:', particle.idx)
             new_matrix = []
             new_velocity = []
-            for v,p,l,g in zip(particle.vmatrix, particle.wmatrix, particle.best['wmatrix'], self.global_best_matrix):
-                #print(v, p, l, g)
-                _velocity = (self.W * v) + \
-                (self.c1 * np.random.uniform(0,1,1) * (l-p)) + \
-                (self.c2 * np.random.uniform(0,1,1) * (g-p))
-                velocity = self.clip(_velocity+v, self.velocity_constraint)
-                #print('velo', velocity)
-                new_velocity.append(velocity)
-                weight = self.clip(p+velocity + np.random.uniform(-alpha, alpha, 1), self.weight_constraint)
-                new_matrix.append(weight)
+            if self.mask:
+                mask = np.random.randint(0, 2, len(particle.wmatrix))
+                for m,v,p,l,g in zip(mask, particle.vmatrix, particle.wmatrix, particle.best['wmatrix'], self.global_best_matrix):
+                    #print(m, v, p, l, g)
+                    if m == 1:
+                        _velocity = (self.w * v) + \
+                        (self.c1 * np.random.uniform(0,1,1) * (l-p)) + \
+                        (self.c2 * np.random.uniform(0,1,1) * (g-p))
+                        velocity = self.clip(_velocity+v, self.velocity_constraint)
+                        #print('velo', velocity)
+                        new_velocity.append(velocity)
+                        weight = self.clip(p+velocity + np.random.uniform(-alpha, alpha, 1), self.weight_constraint)
+                        new_matrix.append(weight)
+                    else:
+                        new_velocity.append(v)
+                        new_matrix.append(p)
+            else:
+                for v,p,l,g in zip(particle.vmatrix, particle.wmatrix, particle.best['wmatrix'], self.global_best_matrix):
+                    #print(v, p, l, g)
+                    _velocity = (self.W * v) + \
+                    (self.c1 * np.random.uniform(0,1,1) * (l-p)) + \
+                    (self.c2 * np.random.uniform(0,1,1) * (g-p))
+                    velocity = self.clip(_velocity+v, self.velocity_constraint)
+                    #print('velo', velocity)
+                    new_velocity.append(velocity)
+                    weight = self.clip(p+velocity + np.random.uniform(-alpha, alpha, 1), self.weight_constraint)
+                    new_matrix.append(weight)
             particle.wmatrix = np.array(new_matrix, dtype='float32')
             particle.vmatrix = np.array(new_velocity, dtype='float32')
             #print(particle.idx, particle.wmatrix.shape, particle.vmatrix.shape)
@@ -159,7 +181,7 @@ class PSO(object):
             self.w = np.max([self.w * self.W_Decay, self.W[0]])
 
     def clip(self, x, bound):
-        #print('clip', type(x), type(bound[0]))
+        #print('clip', x, bound)
         x = x if x > bound[0] else np.array([bound[0]])
         return x if x < bound[1] else np.array([bound[1]])
     

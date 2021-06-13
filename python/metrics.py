@@ -12,7 +12,12 @@ Remarks: Need to ensure all y_pred and y_true are in the same dtype
 '''
 def MSE(y_pred, y_true, em = None): # em were included for the sake of consistency
     result = [l**2 for l in subtract(y_pred, y_true)]
-    return np.sum(result) / len(y_pred)
+    try:
+        ret = np.sum(result) / len(y_pred)
+    except Exception as e:
+        print(e)
+        ret = 1000
+    return ret
 
 def CCE(y_pred, y_true, em = None): # em were included for the sake of consistency
     total_CE = 0
