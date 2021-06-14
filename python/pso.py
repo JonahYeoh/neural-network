@@ -161,7 +161,7 @@ class PSO(object):
             else:
                 for v,p,l,g in zip(particle.vmatrix, particle.wmatrix, particle.best['wmatrix'], self.global_best_matrix):
                     #print(v, p, l, g)
-                    _velocity = (self.W * v) + \
+                    _velocity = (self.w * v) + \
                     (self.c1 * np.random.uniform(0,1,1) * (l-p)) + \
                     (self.c2 * np.random.uniform(0,1,1) * (g-p))
                     velocity = self.clip(_velocity+v, self.velocity_constraint)
