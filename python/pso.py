@@ -147,9 +147,10 @@ class PSO(object):
                 for m,v,p,l,g in zip(mask, particle.vmatrix, particle.wmatrix, particle.best['wmatrix'], self.global_best_matrix):
                     #print(m, v, p, l, g)
                     if m == 1:
+                        r1 = np.random.uniform(0,1,1)
                         _velocity = (self.w * v) + \
-                        (self.c1 * np.random.uniform(0,1,1) * (l-p)) + \
-                        (self.c2 * np.random.uniform(0,1,1) * (g-p))
+                        (self.c1 * r1 * (l-p)) + \
+                        (self.c2 * (1 - r1) * (g-p))
                         velocity = self.clip(_velocity+v, self.velocity_constraint)
                         #print('velo', velocity)
                         new_velocity.append(velocity)
@@ -167,7 +168,7 @@ class PSO(object):
                     velocity = self.clip(_velocity+v, self.velocity_constraint)
                     #print('velo', velocity)
                     new_velocity.append(velocity)
-                    weight = self.clip(p+velocity + np.random.uniform(-alpha, alpha, 1), self.weight_constraint)
+                    weight = self.clip(p+velocity, self.weight_constraint)
                     new_matrix.append(weight)
             particle.wmatrix = np.array(new_matrix, dtype='float32')
             particle.vmatrix = np.array(new_velocity, dtype='float32')

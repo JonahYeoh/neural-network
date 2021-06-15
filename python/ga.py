@@ -201,7 +201,7 @@ class GA(object):
         self.population.sort(key=lambda p: p.fitness + np.random.uniform(-shift, shift, 1), reverse = self.aim)
         return 0, 1
 
-    def crossover(self, seq1, seq2, method='single'): # single point, two points
+    def crossover(self, seq1, seq2, method='two'): # single point, two points
         #print('crossover', type(seq1), type(seq2))
         assert seq1.shape[0] == seq2.shape[0] == self.seq_len
         child = None
