@@ -174,8 +174,7 @@ class GA(object):
             shift = 0.001
         '''
         if len(unique_gene) == len(self.population):
-            self.population.sort(key=lambda p: p.fitness + 0 if p.fitness == sys.float_info.max or p.fitness == sys.float_info.min \
-                                 else np.random.uniform(-shift, shift, 1), reverse = self.aim)
+            self.population.sort(key=lambda p: p.fitness + np.random.uniform(-shift, shift, 1), reverse = self.aim)
         else:
             # inefficient operation
             output_list = list()
@@ -186,8 +185,7 @@ class GA(object):
                         output_list.append(gene)
                         break
             self.population = output_list
-            self.population.sort(key=lambda p: p.fitness + 0 if p.fitness == sys.float_info.max or p.fitness == sys.float_info.min \
-                                 else np.random.uniform(-shift, shift, 1), reverse = self.aim)
+            self.population.sort(key=lambda p: p.fitness + np.random.uniform(-shift, shift, 1), reverse = self.aim)
             while len(self.population) < self.M: # insertion point doesn't increased the odds of being selected
                 self.population.insert(0, Gene(self.idx_tracker, self.seq_len, self.aim, self.weight_constraint))
         self.population = self.population[:self.M]
@@ -196,15 +194,10 @@ class GA(object):
         # adaptive shift
         fitness_list = [p.fitness for p in self.population]
         shift = (np.max(fitness_list) - np.min(fitness_list)) / 2
-        '''
-        if shift == 0:
-            shift = 0.001
-        '''
-        self.population.sort(key=lambda p: p.fitness + 0 if p.fitness == sys.float_info.max or p.fitness == sys.float_info.min \
-                                 else np.random.uniform(-shift, shift, 1), reverse = self.aim)
+        self.population.sort(key=lambda p: p.fitness + np.random.uniform(-shift, shift, 1), reverse = self.aim)
         return 0, 1
 
-    def crossover(self, seq1, seq2, method='single'): # single point, two points
+    def crossover(self, seq1, seq2, method='two'): # single point, two points
         #print('crossover', type(seq1), type(seq2))
         assert seq1.shape[0] == seq2.shape[0] == self.seq_len
         child = None
