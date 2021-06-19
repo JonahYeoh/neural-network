@@ -32,7 +32,8 @@ class Network:
             prev = layer.units
         self.optimizer = optimizer
         aim = True if loss_fn == 'accuracy' else False
-        self.optimizer.__build__(self.get_nparams(), aim)
+        if optimizer != 'sgd':
+            self.optimizer.__build__(self.get_nparams(), aim)
 
     def fit(self, x, y, epochs=100, verbose = 1):
         history = list()
@@ -46,9 +47,11 @@ class Network:
                 self.__update__()
                 #print('update')
                 score = self.evaluate(X, Y, training=True, verbose = 0)
-                #print('Epoch {:03d}: {}'.format(itr, score))
+                if verbose:
+                    print('Epoch {:03d}: {}'.format(itr, score))
                 #print('done', itr)
-                if itr % 50 == 0:
+                history.append(score)
+                if itr % 10 == 0 and self.learning_rate > 0.0001:
                     self.learning_rate *= 0.95
         else:
             fitness, wmatrix, history = self.optimizer.fit(self, X, Y, epochs, \

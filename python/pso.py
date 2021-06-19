@@ -86,6 +86,7 @@ class PSO(object):
     
     def fit(self, obj, x, y, max_iter, goal = 0, batch_size = 0, loss = 'categorical_crossentropy', verbose = 1):
         history = list()
+        p = 0
         for itr in range(max_iter):
             for m in range(len(self.swams)):
                 wmatrix = self.swams[m].wmatrix
@@ -95,7 +96,19 @@ class PSO(object):
                 if self.regularizer:
                     self.swams[m].fitness += self.regularizer(wmatrix)
             best_fitness, best_wmatrix, _ = self.update_state(verbose)
-            history.append(best_fitness)
+            obj.__load__(best_wmatrix)
+            metrics = obj.evaluate(x, y, training=True, verbose = 0)
+            history.append(metrics)
+            '''
+            if metrics['accuracy'] >= 0.9:
+                p += 1
+            else:
+                p = 0
+            if p > 10:
+                print('Iteration {}/{}: \t{}'.format(itr, max_iter, best_fitness))
+                print('Early Termination')
+                return best_fitness, best_wmatrix, history
+            '''
             self.update_pool()
             self.update_learning_config(max_iter, itr)
             if verbose == 1:

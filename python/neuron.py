@@ -6,7 +6,7 @@ class Neuron:
         self.idx = idx
         self.units = units
         self.w = np.array([initializer(weight_constraint[0], weight_constraint[1], 1) for _ in range(units)], dtype='float32')
-        self.velocity = 0.0
+        self.velocity = np.zeros(units)
         if bias:
             self.b = initializer(weight_constraint[0], weight_constraint[1], 1)
         else:

@@ -58,7 +58,7 @@ class DenseLayer:
         return by
 
     def __update__(self, learning_rate):
-        momentum = 0.05
+        momentum = 0.1
         #velocity = momentum * velocity - learning_rate * g
         for n in range(len(self.neurons)):
             for i in range(self.nin):
@@ -69,10 +69,13 @@ class DenseLayer:
                     #print('adj', adjustment)
                     tmp.append(adjustment)
                     batch_delta += self.delta[b][n]
-                self.neurons[n].velocity = momentum * self.neurons[n].velocity - learning_rate * np.sum(tmp)
-                self.neurons[n].weight[i] += self.neurons[n].velocity # / len(self.outputs)
+                self.neurons[n].velocity[i] = momentum * self.neurons[n].velocity[i] - learning_rate * np.sum(tmp)
+                self.neurons[n].weight[i] += self.neurons[n].velocity[i] # / len(self.outputs)
+                self.neurons[n].weight[i] = np.min([3, self.neurons[n].weight[i]])
+                self.neurons[n].weight[i] = np.max([-3, self.neurons[n].weight[i]])
             self.neurons[n].bias -= learning_rate * batch_delta #/ len(self.outputs)
-
+            self.neurons[n].bias = np.min([3, self.neurons[n].bias])
+            self.neurons[n].bias = np.max([-3, self.neurons[n].bias])
 
     def loss(self, y=[], yhat=[]):
         if len(yhat) == 0:
