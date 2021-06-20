@@ -58,7 +58,7 @@ class DenseLayer:
         return by
 
     def __update__(self, learning_rate):
-        momentum = 0.1
+        momentum = 0.01
         #velocity = momentum * velocity - learning_rate * g
         for n in range(len(self.neurons)):
             for i in range(self.nin):

@@ -6,15 +6,20 @@ import numpy as np
 
 def sigmoid(x):
     activated_list = list()
-    for X in x:
-        tmp = list()
-        for Xi in X:
-            if Xi == 0:
-                Xi = 1e-7
-            y = 1 / (1 + np.exp(-Xi))
-            tmp.append(y)
-        activated_list.append(tmp)
-    return activated_list
+    try:
+        for X in x:
+            tmp = list()
+            for Xi in X:
+                if Xi == 0:
+                    Xi = 1e-7
+                y = 1 / (1 + np.exp(-Xi))
+                tmp.append(y)
+            activated_list.append(tmp)
+        return activated_list
+    except Exception as e:
+        print('error msg', e, 'x', x)
+        input('wait')
+    return x
 
 def d_sigmoid(x):
     s = sigmoid([x])[0][0].ravel()

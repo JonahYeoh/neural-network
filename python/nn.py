@@ -51,8 +51,10 @@ class Network:
                     print('Epoch {:03d}: {}'.format(itr, score))
                 #print('done', itr)
                 history.append(score)
-                if itr % 10 == 0 and self.learning_rate > 0.0001:
-                    self.learning_rate *= 0.95
+                '''
+                if itr % 50 == 0 and self.learning_rate > 0.0001:
+                    self.learning_rate *= 0.98
+                '''
         else:
             fitness, wmatrix, history = self.optimizer.fit(self, X, Y, epochs, \
                 loss = self.loss_fn, verbose = verbose)
